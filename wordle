@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+# Matches '.a.b.c'
+# Includs s,t,r
+# Omits q,x,z use Getopt::Long qw(GetOptions);
+
+use Getopt::Long qw(GetOptions);
+
+my $help    = 0;
+my $match   = '.....';
+my $include = '';
+my $omit    = '';
+
+GetOptions(
+    "help"      => \$help,
+    "match=s"   => \$match,
+    "include=s" => \$include,
+    "omit=s"    => \$omit,
+);
+
+help() if $help;
+
+my $command = "egrep '^$match\$' /usr/share/dict/words | egrep -v '[A-Z]'";
+
+if ($include) {
+    my @include = split //, $include;
+    foreach my $i (@include) {
+        $command .= " | grep $i ";
+    }
+}
+
+if ($omit) {
+    $command .= " | egrep -v [$omit] ";
+}
+
+print "$command \n";
+print `$command`;
+
+
+sub help {
+    print "Usage: $0 -m '.a.b.c' -i 'str' -o 'qxz'\n";
+    print "Prints words that match the pattern -m, includes the letters -i, and omits the letters -o\n";
+    print "Pro tip: You can also do stuff like -m '..[^xy]..' to indicate
+        that x and y are included, just not in that spot. \n";
+    print "\nYes, of course it's cheating.\n";
+    exit();
+}
+

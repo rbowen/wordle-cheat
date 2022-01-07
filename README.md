@@ -2,7 +2,7 @@
 
 Usage:
 
-`/home/rbowen/bin/wordle -m '.a.b.c' -i 'str' -o 'qxz'`
+`wordle -m '.a.b.c' -i 'str' -o 'qxz'`
 
 Prints words that match the pattern -m, includes the letters -i, and omits the letters -o
 

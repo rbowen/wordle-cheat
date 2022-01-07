@@ -19,7 +19,7 @@ GetOptions(
 
 help() if $help;
 
-my $command = "egrep '^$match\$' /usr/share/dict/words | egrep -v '[A-Z]'";
+my $command = "egrep '^$match\$' /usr/share/dict/words | egrep -v '[A-Z]' | egrep -v '\\W'";
 
 if ($include) {
     my @include = split //, $include;

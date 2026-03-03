@@ -1,47 +1,94 @@
-#!/usr/bin/perl
-# Matches '.a.b.c'
-# Includs s,t,r
-# Omits q,x,z use Getopt::Long qw(GetOptions);
+#!/usr/bin/env uv run --script
+import re
+import sys
 
-use Getopt::Long qw(GetOptions);
+def parse_guess(guess):
+    pattern = []
+    include = set()
+    exclude = set()
+    
+    i = 0
+    while i < len(guess) and len(pattern) < 5:
+        if guess[i] in '+-':
+            # Marker before letter
+            marker = guess[i]
+            if i + 1 < len(guess):
+                letter = guess[i + 1]
+                if marker == '+':
+                    pattern.append(letter)
+                else:  # marker == '-'
+                    pattern.append(f'[^{letter}]')
+                include.add(letter)
+                i += 2
+            else:
+                i += 1
+        else:
+            # No marker - excluded letter
+            pattern.append('.')
+            exclude.add(guess[i])
+            i += 1
+    
+    # Pad to 5 positions if needed
+    while len(pattern) < 5:
+        pattern.append('.')
+    
+    return pattern, include, exclude
 
-my $help    = 0;
-my $match   = '.....';
-my $include = '';
-my $omit    = '';
+def find_words(pattern, include, exclude):
+    with open('/usr/share/dict/words') as f:
+        words = [w.strip().lower() for w in f if len(w.strip()) == 5 and w.strip().isalpha() and w.strip().islower()]
+    
+    regex = re.compile(f'^{pattern}$')
+    matches = [w for w in words if regex.match(w)]
+    
+    if include:
+        matches = [w for w in matches if all(c in w for c in include)]
+    if exclude:
+        matches = [w for w in matches if not any(c in w for c in exclude)]
+    
+    return matches
 
-GetOptions(
-    "help"      => \$help,
-    "match=s"   => \$match,
-    "include=s" => \$include,
-    "omit=s"    => \$omit,
-);
+print("Wordle Helper - Enter guesses like: ad+ie-u")
+print("(+letter = correct position, -letter = wrong position, letter = not in word)")
+print()
 
-help() if $help;
+all_exclude = set()
+all_include = set()
+patterns = ['.'] * 5
 
-my $command = "egrep '^$match\$' /usr/share/dict/words | egrep -v '[A-Z]' | egrep -v '\\W'";
-
-if ($include) {
-    my @include = split //, $include;
-    foreach my $i (@include) {
-        $command .= " | grep $i ";
-    }
-}
-
-if ($omit) {
-    $command .= " | egrep -v [$omit] ";
-}
-
-print "$command \n";
-print `$command`;
-
-
-sub help {
-    print "Usage: $0 -m '.a.b.c' -i 'str' -o 'qxz'\n";
-    print "Prints words that match the pattern -m, includes the letters -i, and omits the letters -o\n";
-    print "Pro tip: You can also do stuff like -m '..[^xy]..' to indicate
-        that x and y are included, just not in that spot. \n";
-    print "\nYes, of course it's cheating.\n";
-    exit();
-}
-
+while True:
+    guess = input("Guess result (/q to quit): ").strip().lower()
+    if not guess or guess == '/q':
+        break
+    
+    pattern, include, exclude = parse_guess(guess)
+    
+    # Merge pattern constraints
+    for i, c in enumerate(pattern):
+        if c != '.':
+            if c.startswith('[^'):
+                # Negative constraint - merge with existing
+                if patterns[i] == '.':
+                    patterns[i] = c
+                elif patterns[i].startswith('[^'):
+                    # Merge multiple negative constraints
+                    existing = patterns[i][2:-1]
+                    new_char = c[2:-1]
+                    patterns[i] = f'[^{existing}{new_char}]'
+            else:
+                # Positive constraint - overwrite
+                patterns[i] = c
+    
+    all_include.update(include)
+    all_exclude.update(exclude)
+    
+    final_pattern = ''.join(patterns)
+    words = find_words(final_pattern, all_include, all_exclude)
+    
+    print(f"\nPattern: {final_pattern}")
+    print(f"Must include: {sorted(all_include)}")
+    print(f"Must exclude: {sorted(all_exclude)}")
+    print(f"\nPossible words ({len(words)}):")
+    for w in words:
+        print(w)
+    print()

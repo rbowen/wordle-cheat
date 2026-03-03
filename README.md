@@ -1,15 +1,39 @@
 # wordle-cheat
 
-Usage:
+An interactive Wordle helper that narrows down possible words based on your guess results.
 
-`wordle -m '.a.b.c' -i 'str' -o 'qxz'`
+## Usage
 
-Prints words that match the pattern -m, includes the letters -i, and omits the letters -o
+Run the script:
 
-Pro tip: You can also do stuff like `-m '..[^xy]..'` to indicate that x and y are included, just not in that spot. 
+```bash
+./wordle
+```
+
+Enter your guess results using this notation:
+- `+letter` - correct letter in correct position (green)
+- `-letter` - correct letter in wrong position (yellow)
+- `letter` - letter not in the word (gray)
+
+### Example
+
+```
+Guess result: ad+ie-u
+```
+
+This means:
+- `a` is not in the word (gray)
+- `d` is not in the word (gray)
+- `i` is in position 3 (green)
+- `e` is in the word but not in position 4 (yellow)
+- `u` is not in the word (gray)
+
+The script will show matching words and update constraints as you enter more guesses.
+
+## Requirements
+
+- Python 3
+- `uv` (for script execution)
+- `/usr/share/dict/words` (present on most Linux/macOS systems)
 
 Yes, of course it's cheating.
-
-Requires Perl and the `Getopt::Long` module.
-
-Assumes the presence of `/usr/share/dict/words` (present on most Linux systems).
